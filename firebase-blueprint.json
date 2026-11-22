@@ -1,0 +1,89 @@
+{
+  "entities": {
+    "InvestmentTarget": {
+      "title": "InvestmentTarget",
+      "description": "A saved USD-to-PKR investment plan configuration belonging to a signed-in user.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the user who owns this target.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "title": {
+          "type": "string",
+          "description": "Descriptive label for the investment target plan.",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "amountUsd": {
+          "type": "number",
+          "description": "Investment amount in USD ($10 to $50,000)."
+        },
+        "holdingDays": {
+          "type": "integer",
+          "description": "Holding duration in calendar days (1 to 365)."
+        },
+        "exchangeRate": {
+          "type": "number",
+          "description": "Base USD/PKR entry exchange rate."
+        },
+        "spreadPkr": {
+          "type": "number",
+          "description": "Open-market dealer spread in PKR per USD (0 to 25)."
+        },
+        "targetProfitMode": {
+          "type": "boolean",
+          "description": "Whether Target Profit Mode is enabled."
+        },
+        "targetProfitPkr": {
+          "type": "number",
+          "description": "Desired net profit in PKR when Target Profit Mode is active."
+        },
+        "selectedScenario": {
+          "type": "string",
+          "description": "Selected historical USD/PKR regime identifier.",
+          "enum": [
+            "stable_2026",
+            "flat_pegged",
+            "moderate_rise",
+            "historical_surge"
+          ]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the target was created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the target was last updated."
+        }
+      },
+      "required": [
+        "ownerId",
+        "title",
+        "amountUsd",
+        "holdingDays",
+        "exchangeRate",
+        "spreadPkr",
+        "targetProfitMode",
+        "targetProfitPkr",
+        "selectedScenario",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/investmentTargets/{targetId}": {
+      "schema": {
+        "$ref": "#/entities/InvestmentTarget"
+      },
+      "description": "Top-level collection storing user-owned USD-to-PKR investment target plans."
+    }
+  }
+}

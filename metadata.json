@@ -1,0 +1,6 @@
+{
+  "name": "PakFX Planner",
+  "description": "USD-to-PKR Investment Simulator, Multi-Regime Forecaster, Google Calendar & Gmail Planner, and Gemini AI Assistant.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

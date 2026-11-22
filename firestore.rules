@@ -1,0 +1,130 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Shared Primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isEmailVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isOwner(ownerId) {
+      return isSignedIn() && request.auth.uid == ownerId;
+    }
+
+    function isValidScenario(scenario) {
+      return scenario in ['stable_2026', 'flat_pegged', 'moderate_rise', 'historical_surge'];
+    }
+
+    function isValidInvestmentTarget(data) {
+      return data.keys().hasAll([
+        'ownerId',
+        'title',
+        'amountUsd',
+        'holdingDays',
+        'exchangeRate',
+        'spreadPkr',
+        'targetProfitMode',
+        'targetProfitPkr',
+        'selectedScenario',
+        'createdAt',
+        'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'ownerId',
+        'title',
+        'amountUsd',
+        'holdingDays',
+        'exchangeRate',
+        'spreadPkr',
+        'targetProfitMode',
+        'targetProfitPkr',
+        'selectedScenario',
+        'createdAt',
+        'updatedAt'
+      ]) &&
+      isValidId(data.ownerId) &&
+      data.ownerId == request.auth.uid &&
+      data.title is string &&
+      data.title.size() >= 1 &&
+      data.title.size() <= 120 &&
+      (data.amountUsd is int || data.amountUsd is float) &&
+      data.amountUsd >= 10 &&
+      data.amountUsd <= 50000 &&
+      data.holdingDays is int &&
+      data.holdingDays >= 1 &&
+      data.holdingDays <= 365 &&
+      (data.exchangeRate is int || data.exchangeRate is float) &&
+      data.exchangeRate >= 50 &&
+      data.exchangeRate <= 2000 &&
+      (data.spreadPkr is int || data.spreadPkr is float) &&
+      data.spreadPkr >= 0 &&
+      data.spreadPkr <= 25 &&
+      data.targetProfitMode is bool &&
+      (data.targetProfitPkr is int || data.targetProfitPkr is float) &&
+      data.targetProfitPkr >= 0 &&
+      data.targetProfitPkr <= 50000000 &&
+      data.selectedScenario is string &&
+      isValidScenario(data.selectedScenario) &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    match /investmentTargets/{targetId} {
+      allow get: if isSignedIn() &&
+        isValidId(targetId) &&
+        isOwner(existing().ownerId);
+
+      allow list: if isSignedIn() &&
+        existing().ownerId == request.auth.uid;
+
+      allow create: if isEmailVerified() &&
+        isValidId(targetId) &&
+        isValidInvestmentTarget(incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+
+      allow update: if isEmailVerified() &&
+        isValidId(targetId) &&
+        isOwner(existing().ownerId) &&
+        isValidInvestmentTarget(incoming()) &&
+        incoming().ownerId == existing().ownerId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'title',
+          'amountUsd',
+          'holdingDays',
+          'exchangeRate',
+          'spreadPkr',
+          'targetProfitMode',
+          'targetProfitPkr',
+          'selectedScenario',
+          'updatedAt'
+        ]);
+
+      allow delete: if isEmailVerified() &&
+        isValidId(targetId) &&
+        isOwner(existing().ownerId);
+    }
+  }
+}
